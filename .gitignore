@@ -1,7 +1,12 @@
 node_modules/
 dist/
 .env
+.env.local
 .env.*.local
+supabase/functions/.env
+supabase/functions/.env.*
+!supabase/functions/.env.example
+supabase/.temp/
 *.tsbuildinfo
 test-results/
 public/ocr/
