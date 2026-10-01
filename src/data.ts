@@ -18,11 +18,19 @@ export async function loadProfile(id:string):Promise<Profile> {
   if(error) throw error; return data;
 }
 export async function loadDataset(admin:boolean):Promise<Dataset> {
-  const tables=['classes','surveys','students','enrollments','response_status',...(admin?['response_answers','profiles','class_access','form4_submissions','source_imports']:[])];
+  const tables=['classes','surveys',...(admin?['students']:[]),'enrollments','response_status',...(admin?['response_answers','profiles','class_access','form4_submissions','source_imports']:[])];
   const results=await Promise.all(tables.map(allRows));
   const result=emptyDataset();
   tables.forEach((name,i)=>{const key=({response_status:'responses',response_answers:'answers',class_access:'assignments',form4_submissions:'submissions',source_imports:'sources'} as Record<string,string>)[name]||name;(result as unknown as Record<string,unknown>)[key]=results[i];});
   result.classes=result.classes.filter(c=>c.management_imported);
+  if(!admin){
+    for(let offset=0;;offset+=500){
+      const {data,error}=await supabase!.rpc('get_partner_students').order('id').range(offset,offset+499);
+      if(error)throw error;
+      result.students.push(...(data||[]).map((s:{id:string;urn:string;phone:string})=>({...s,name:''})));
+      if(!data||data.length<500)break;
+    }
+  }
   return result;
 }
 export async function rpc(name:string,args:Record<string,unknown>) {const {data,error}=await supabase!.rpc(name,args);if(error)throw error;return data;}
