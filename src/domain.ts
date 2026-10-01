@@ -26,19 +26,19 @@ export function whatsappPhone(value: unknown): string | null {
   if (digits.startsWith('55')) return /^55[1-9]\d(?:9\d{8}|[2-5]\d{7})$/.test(digits) ? digits : null;
   return /^(?:\+|00)/.test(raw) && /^[1-9]\d{7,14}$/.test(digits) ? digits : null;
 }
-export function renderMessage(template: string, student: Student, classroom: ClassRow, survey: Survey) {
-  const variables: Record<string,string> = {nome:student.name.split(' ')[0],nome_completo:student.name,turma:classroom.code,pesquisa:survey.name,link:survey.url,matricula:student.urn};
+export function renderMessage(template: string, student: Student, classroom: ClassRow, survey: Survey, urnOnly=false) {
+  const variables: Record<string,string> = {nome:urnOnly?student.urn:student.name.split(' ')[0],nome_completo:urnOnly?student.urn:student.name,turma:classroom.code,pesquisa:survey.name,link:survey.url,matricula:student.urn};
   return template.replace(/\{(nome_completo|nome|turma|pesquisa|link|matricula)\}/g, (_, key:string) => variables[key]);
 }
 export const validSurveyUrl = (url: string) => { try { return new URL(url).protocol === 'https:'; } catch { return false; } };
-export function whatsappUrl(student: Student, classroom: ClassRow, survey: Survey) {
+export function whatsappUrl(student: Student, classroom: ClassRow, survey: Survey, urnOnly=false) {
   const phone = whatsappPhone(student.phone);
   if (!phone || !validSurveyUrl(survey.url)) return null;
-  return `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(renderMessage(survey.message_template,student,classroom,survey))}`;
+  return `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(renderMessage(survey.message_template,student,classroom,survey,urnOnly))}`;
 }
 export function classStudents(data: Dataset, classId: string) {
   const enrolled = new Map(data.enrollments.filter(e=>e.class_id===classId).map(e=>[e.student_id,e]));
-  return data.students.filter(s=>enrolled.has(s.id)).map(s=>({...s,enrollment:enrolled.get(s.id)!})).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
+  return data.students.filter(s=>enrolled.has(s.id)).map(s=>({...s,enrollment:enrolled.get(s.id)!})).sort((a,b)=>(a.name||a.urn).localeCompare(b.name||b.urn,'pt-BR'));
 }
 export function responseFor(data: Dataset, surveyId: string, studentId: string) { return data.responses.find(r=>r.survey_id===surveyId && r.student_id===studentId); }
 export function stats(data:Dataset, classroom:ClassRow, survey?:Survey) {
