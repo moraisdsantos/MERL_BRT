@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+.env.*.local
+*.tsbuildinfo
+test-results/
+public/ocr/
+public/pdf-fonts/
+public/pdf-cmaps/

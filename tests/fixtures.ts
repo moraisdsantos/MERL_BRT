@@ -1,0 +1,12 @@
+import { DEFAULT_MESSAGE, type Dataset, type Role } from '../src/domain';
+export function demoDataset(role:Role):Dataset {
+  const classes = ['T01','T02','T03','T04'].map((code,i)=>({id:`class-${i+1}`,code,name:i===0?'Piloto · Básico':i===1?'Intermediário':i===2?'Inclusão digital · Básico':'Inclusão digital · Intermediário',partner:i<2?'Centro':'Centro'}));
+  const surveys=classes.map(c=>({id:`survey-${c.id}`,class_id:c.id,code:'F4',name:'Form 4 · Acompanhamento',url:'',due_date:'2026-10-08',message_template:DEFAULT_MESSAGE}));
+  const names=['Ana Costa','Bruno Martins','Carla Souza','Daniel Lima','Elisa Santos','Fábio Alves','Gabriela Rocha','Helena Silva','Igor Pereira','Joana Oliveira','Karen Melo','Lucas Dias','Marina Ribeiro','Nara Gomes','Otávio Barros','Paula Andrade','Renata Castro','Sofia Araújo','Tiago Moura','Vera Lopes','Yara Freitas','Zélia Nunes'];
+  const students=classes.flatMap((c,ci)=>names.slice(0,[22,18,14,12][ci]).map((name,i)=>({id:`student-${ci}-${i}`,urn:`DEMO-${c.code}-${String(i+1).padStart(4,'0')}`,name,phone:''})));
+  const enrollments=students.map(s=>({class_id:`class-${Number(s.id.split('-')[1])+1}`,student_id:s.id,excluded:false,exclusion_reason:''}));
+  const responses=students.filter(s=>Number(s.id.split('-')[2])<[16,9,4,2][Number(s.id.split('-')[1])]).map(s=>({id:`response-${s.id}`,class_id:enrollments.find(e=>e.student_id===s.id)!.class_id,survey_id:`survey-${enrollments.find(e=>e.student_id===s.id)!.class_id}`,student_id:s.id,responded_at:'2026-09-28T13:00:00Z'}));
+  const data:Dataset={submissions:[],sources:[],classes,surveys,students,enrollments,responses,answers:responses.map(r=>({response_id:r.id,answers:{'Matrícula':students.find(s=>s.id===r.student_id)!.urn,'Registro':'Exemplo fictício — nenhuma resposta real'}})),profiles:[{id:'demo-admin',email:'admin@exemplo.invalid',full_name:'Equipe MERL',role:'admin'},{id:'demo-partner',email:'parceiro@exemplo.invalid',full_name:'Implementadora',role:'partner'}],assignments:[{user_id:'demo-partner',class_id:'class-1'},{user_id:'demo-partner',class_id:'class-2'}]};
+  if(role==='partner') {data.classes=data.classes.slice(0,2);const allowed=new Set(data.classes.map(c=>c.id));data.surveys=data.surveys.filter(s=>allowed.has(s.class_id));data.enrollments=data.enrollments.filter(e=>allowed.has(e.class_id));data.students=data.students.filter(s=>data.enrollments.some(e=>e.student_id===s.id));data.responses=data.responses.filter(r=>allowed.has(r.class_id));data.answers=[];data.profiles=[];data.assignments=[];}
+  return data;
+}
