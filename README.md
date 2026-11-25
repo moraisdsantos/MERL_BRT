@@ -1,15 +1,19 @@
-# SIDP · Form 4 · v2
+# SIDP · Acompanhamento MERL · v3
 
-React + TypeScript, Supabase e GitHub Pages. Interface mínima em português, com o ícone ARCA enviado.
+React + TypeScript, Supabase e GitHub Pages. Interface em português no visual do hub do Verbalizado: papel roxo, traço de rascunho, Poppins.
+
+O seletor **Form 3 / Form 4** no topo define qual pesquisa as telas de visão geral, turmas, dados, conferência e mensagens mostram. O Form 3 é aplicado durante o curso (sem a regra das 3 semanas); o Form 4, três semanas após a conclusão.
 
 ## Fluxo
 
-1. **Dados → Quadro de gestão**: o CSV cria ou atualiza as turmas.
-2. **Dados → Lista de presença**: um PDF por upload, vinculado à turma escolhida. Confira os nomes, matrículas, telefones e quem participou; só então confirme a lista.
-3. **Dados → Respostas · Form 4**: o CSV/XLSX é cruzado com os participantes de todas as turmas.
-4. **Conferência**: confira candidatos e confirme ou ignore os registros ambíguos.
-5. **Mensagens**: configure o link do Form 4 e o lembrete de cada turma.
-6. **Acessos**: libere as turmas para contas de implementadoras previamente criadas.
+1. **Dados → Quadro de gestão**: o CSV cria ou atualiza as turmas, com as pesquisas F3 e F4 de cada uma.
+2. **Dados → Lista de presença**: um PDF por upload, vinculado à turma escolhida. Confira os nomes, matrículas, telefones e quem participou; só então confirme a lista. O WhatsApp informado na chamada aparece ao lado do URN em todas as listas.
+3. **Dados → Respostas**: o export do Kobo (CSV/XLSX) do formulário selecionado é cruzado com os participantes de todas as turmas.
+4. **Conferência**: confira candidatos e confirme ou ignore os registros ambíguos do formulário selecionado.
+5. **Problemas**: registre questões de campo (frequência, chamada, URN, formulário) por turma, com encaminhamento e resolução. Implementadoras veem os problemas das próprias turmas.
+6. **Métricas**: perfil demográfico agregado das pessoas com resposta vinculada (gênero, faixa etária, raça/cor, escolaridade, renda). Somente contagens; nunca respostas individuais.
+7. **Mensagens**: configure o link e o lembrete de cada turma por formulário.
+8. **Acessos**: libere as turmas para contas de implementadoras previamente criadas.
 
 As turmas não são fixas nem aparecem como dados fictícios. São geradas pelo `ID_Turma` do quadro de gestão. Não há troca de papéis nem modo de demonstração.
 
@@ -37,6 +41,9 @@ Execute no SQL Editor do Supabase, nesta ordem:
 
 1. `supabase/migrations/001_sidp.sql`
 2. `supabase/migrations/002_form4_workflow.sql`
+3. `supabase/migrations/003_ai_and_partner_privacy.sql`
+4. `supabase/migrations/004_form3_and_issues.sql`
+5. `supabase/migrations/005_revoke_anon_rpc.sql`
 
 Crie sua conta com e-mail e senha em **Authentication → Users**. Verifique a identidade antes de confirmar o e-mail. Depois conceda a administração:
 
@@ -51,6 +58,10 @@ Crie as contas das implementadoras em Authentication → Users. Elas recebem `pa
 ### Atualização da v1
 
 Se a primeira migração já foi aplicada, execute **somente `002_form4_workflow.sql`**. Ela preserva contas e dados. Respostas antigas do F4 são copiadas para registros de conferência; seus vínculos precisam ser confirmados pelo novo fluxo. Respostas de outras pesquisas permanecem nas tabelas existentes.
+
+### Atualização da v2 para a v3
+
+Execute `003_ai_and_partner_privacy.sql` (se ainda não aplicada) e `004_form3_and_issues.sql`, nesta ordem. A 004 preserva vínculos e respostas: as submissões existentes recebem `form_code = 'F4'`. Depois reimporte o quadro de gestão uma vez, para criar a pesquisa F3 de cada turma. Sem a 004, o app continua funcionando para o Form 4; a importação do Form 3 e a tela de problemas avisam que a migração falta.
 
 As turmas antigas ficam disponíveis quando seu código é importado pelo quadro de gestão. Confirme os participantes via PDF para habilitar o novo acompanhamento.
 

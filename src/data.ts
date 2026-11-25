@@ -18,8 +18,9 @@ export async function loadProfile(id:string):Promise<Profile> {
   if(error) throw error; return data;
 }
 export async function loadDataset(admin:boolean):Promise<Dataset> {
-  const tables=['classes','surveys',...(admin?['students']:[]),'enrollments','response_status',...(admin?['response_answers','profiles','class_access','form4_submissions','source_imports']:[])];
-  const results=await Promise.all(tables.map(allRows));
+  const tables=['classes','surveys',...(admin?['students']:[]),'enrollments','response_status','issues',...(admin?['response_answers','profiles','class_access','form4_submissions','source_imports']:[])];
+  // A banco anterior à migração 004 ainda não tem a tabela de problemas.
+  const results=await Promise.all(tables.map(table=>table==='issues'?allRows(table).catch(()=>[]):allRows(table)));
   const result=emptyDataset();
   tables.forEach((name,i)=>{const key=({response_status:'responses',response_answers:'answers',class_access:'assignments',form4_submissions:'submissions',source_imports:'sources'} as Record<string,string>)[name]||name;(result as unknown as Record<string,unknown>)[key]=results[i];});
   result.classes=result.classes.filter(c=>c.management_imported);
