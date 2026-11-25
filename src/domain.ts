@@ -1,4 +1,7 @@
 export type Role = 'admin' | 'partner';
+export type FormCode = 'F3' | 'F4';
+export const FORM_CODES: FormCode[] = ['F3','F4'];
+export const formLabel = (code: FormCode) => code==='F3' ? 'Form 3' : 'Form 4';
 export type ClassRow = { id: string; code: string; name: string; partner: string; starts_on?:string|null; ends_on?:string|null; followup_on?:string|null; shift?:string; management_imported?:boolean };
 export type Survey = { id: string; class_id: string; code: string; name: string; url: string; due_date: string | null; message_template: string };
 export type Student = { id: string; urn: string; name: string; phone: string };
@@ -7,15 +10,18 @@ export type ResponseRow = { id: string; class_id: string; survey_id: string; stu
 export type AnswerRow = { response_id: string; answers: Record<string, unknown> };
 export type Profile = { id: string; email: string; full_name: string; role: Role };
 export type Assignment = { user_id: string; class_id: string };
-export type Dataset = { classes: ClassRow[]; surveys: Survey[]; students: Student[]; enrollments: Enrollment[]; responses: ResponseRow[]; answers: AnswerRow[]; profiles: Profile[]; assignments: Assignment[]; submissions:Form4Submission[]; sources:SourceImport[] };
+export type Dataset = { classes: ClassRow[]; surveys: Survey[]; students: Student[]; enrollments: Enrollment[]; responses: ResponseRow[]; answers: AnswerRow[]; profiles: Profile[]; assignments: Assignment[]; submissions:Form4Submission[]; sources:SourceImport[]; issues:Issue[] };
 export type MatchCandidate={student_id:string;class_id:string;score:number;reason:string};
-export type Form4Submission={id:string;external_id:string;source_urn:string;source_name:string;source_phone:string;country:string;submitted_at:string|null;student_id:string|null;class_id:string|null;state:'linked'|'review'|'ignored';flags:string[];candidates:MatchCandidate[];answers:Record<string,unknown>;match_origin:'auto'|'manual';review_reason:string};
-export type SourceImport={id:string;kind:'management'|'attendance'|'form4';filename:string;imported_at:string;row_count:number;metadata:Record<string,unknown>};
+export type Form4Submission={id:string;external_id:string;form_code?:FormCode;source_urn:string;source_name:string;source_phone:string;country:string;submitted_at:string|null;student_id:string|null;class_id:string|null;state:'linked'|'review'|'ignored';flags:string[];candidates:MatchCandidate[];answers:Record<string,unknown>;match_origin:'auto'|'manual';review_reason:string};
+export type Issue={id:string;category:'frequencia'|'chamada'|'urn'|'formulario'|'outra';title:string;detail:string;recommendation:string;class_ids:string[];status:'aberta'|'resolvida';created_at:string;resolved_at:string|null;resolution_note:string};
+export const ISSUE_CATEGORIES:[Issue['category'],string][]=[['frequencia','Frequência'],['chamada','Chamada'],['urn','URN'],['formulario','Formulário'],['outra','Outra']];
+export const submissionForm=(s:Form4Submission):FormCode=>s.form_code||'F4';
+export type SourceImport={id:string;kind:'management'|'attendance'|'form4'|'form3';filename:string;imported_at:string;row_count:number;metadata:Record<string,unknown>};
 export type ImportKind = 'roster' | 'responses';
 export type Mapping = { urn: string; name: string; phone: string; status: string; submittedAt: string };
 export type ImportRow = { urn: string; name: string; phone: string; responded: boolean; submitted_at: string | null; answers: Record<string, unknown> };
 export const DEFAULT_MESSAGE = 'Olá, {nome}! Tudo bem? Aqui é a equipe do projeto SIDP — British Council, Fase V. Sua participação na pesquisa {pesquisa}, da turma {turma}, é muito importante.\n\nVocê pode responder pelo link: {link}\n\nSua matrícula é {matricula}. Se já respondeu, por favor nos avise. Obrigado!\nEquipe MERL · ARCA';
-export const emptyDataset = (): Dataset => ({classes:[],surveys:[],students:[],enrollments:[],responses:[],answers:[],profiles:[],assignments:[],submissions:[],sources:[]});
+export const emptyDataset = (): Dataset => ({classes:[],surveys:[],students:[],enrollments:[],responses:[],answers:[],profiles:[],assignments:[],submissions:[],sources:[],issues:[]});
 export const normalizeURN = (value: unknown) => String(value ?? '').trim().toUpperCase().replace(/[–—]/g, '-');
 export function whatsappPhone(value: unknown): string | null {
   const raw = String(value ?? '').trim();

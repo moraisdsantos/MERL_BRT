@@ -6,11 +6,11 @@ import { readDataset } from './import-file';
 import { compactURN,normalizeName,prepareForm4 } from './matching';
 import type { AttendanceRow } from './attendance-layout';
 import type { AttendanceResult } from './attendance-pdf';
-import type { Dataset,Form4Submission } from './domain';
+import { formLabel,type Dataset,type Form4Submission,type FormCode } from './domain';
 export type WorkflowKind='management'|'attendance'|'form4';
 export type WorkflowPayload={rows:unknown[];source?:Record<string,unknown>[];classId?:string};
 const message=(e:unknown)=>e instanceof Error?e.message:'Não foi possível ler o arquivo.';
-export default function ImportWorkflows({kind,data,classId:initialClass,onClose,onSave}:{kind:WorkflowKind;data:Dataset;classId?:string;onClose:()=>void;onSave:(kind:WorkflowKind,payload:WorkflowPayload,filename:string)=>Promise<void>}){
+export default function ImportWorkflows({kind,formCode,data,classId:initialClass,onClose,onSave}:{kind:WorkflowKind;formCode:FormCode;data:Dataset;classId?:string;onClose:()=>void;onSave:(kind:WorkflowKind,payload:WorkflowPayload,filename:string)=>Promise<void>}){
   const [filename,setFilename]=useState(''),[progress,setProgress]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
   const [board,setBoard]=useState<ManagedClass[]>([]),[boardErrors,setBoardErrors]=useState<string[]>([]);
   const [classId,setClassId]=useState(initialClass||data.classes[0]?.id||'');
@@ -18,7 +18,7 @@ export default function ImportWorkflows({kind,data,classId:initialClass,onClose,
   const [form4,setForm4]=useState<Awaited<ReturnType<typeof prepareForm4>>|null>(null),[source,setSource]=useState<Record<string,unknown>[]>([]);
   const pagesRef=useRef<string[]>([]),mounted=useRef(true);
   useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;pagesRef.current.forEach(URL.revokeObjectURL);};},[]);
-  const title=kind==='management'?'Quadro de gestão':kind==='attendance'?'Lista de presença':'Respostas · Form 4';
+  const title=kind==='management'?'Quadro de gestão':kind==='attendance'?'Lista de presença':`Respostas · ${formLabel(formCode)}`;
   const selected=attendance?.rows.filter(r=>r.include)||[];
   const duplicate=selected.some((r,i)=>selected.some((s,j)=>j!==i&&r.urn&&compactURN(r.urn)===compactURN(s.urn)));
   const invalid=selected.some(r=>!r.name.trim()||r.urn.includes(' '));
@@ -28,7 +28,7 @@ export default function ImportWorkflows({kind,data,classId:initialClass,onClose,
     try{
       if(kind==='management'){if(file.size>10*1024*1024)throw new Error('CSV limitado a 10 MB.');if(!/\.csv$/i.test(file.name))throw new Error('Selecione um CSV.');const result=parseManagement(await file.text());if(mounted.current){setBoard(result.rows);setBoardErrors(result.errors);}}
       if(kind==='attendance'){const {readAttendancePDF}=await import('./attendance-pdf');const result=await readAttendancePDF(file,text=>{if(mounted.current)setProgress(text);});if(!mounted.current){result.pages.forEach(URL.revokeObjectURL);return;}pagesRef.current=result.pages;setAttendance(result);setPage(0);}
-      if(kind==='form4'){const records=await readDataset(file);if(!records.length)throw new Error('Arquivo sem registros.');const result=await prepareForm4(records,data);if(mounted.current){setForm4(result);setSource(records);}}
+      if(kind==='form4'){const records=await readDataset(file);if(!records.length)throw new Error('Arquivo sem registros.');const result=await prepareForm4(records,data,formCode);if(mounted.current){setForm4(result);setSource(records);}}
       if(mounted.current)setFilename(file.name);
     }catch(e){if(mounted.current)setError(message(e));}finally{if(mounted.current){setBusy(false);setProgress('');}}
   }

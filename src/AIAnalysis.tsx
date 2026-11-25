@@ -1,5 +1,5 @@
 import { useEffect,useRef,useState } from 'react';
-import { AlertCircle,CheckCircle2,RefreshCw,Sparkles } from 'lucide-react';
+import { AlertCircle,CheckCircle2,ListChecks,RefreshCw } from 'lucide-react';
 import { supabase } from './client';
 import { rpc } from './data';
 import { classStudents,responseFor,stats,type Dataset } from './domain';
@@ -29,7 +29,7 @@ export default function AIAnalysis({data,onReview}:{data:Dataset;onReview:(submi
   const pending=classStudents(data,id).filter(s=>!s.enrollment.excluded&&s.enrollment.attendance_verified&&(!survey||!responseFor(data,survey.id,s.id)));
   const report=run?.status==='completed'?run.result:null;
   return <>
-    <div className="page-heading"><h1>Análise IA</h1><button className="button primary" disabled={!id||busy||loading||!pending.length} onClick={()=>void analyze()}>{busy?<RefreshCw size={17} className="spin"/>:<Sparkles size={17}/>} {busy?'Analisando…':'Analisar'}</button></div>
+    <div className="page-heading"><h1>Análise IA</h1><button className="button primary" disabled={!id||busy||loading||!pending.length} onClick={()=>void analyze()}>{busy?<RefreshCw size={17} className="spin"/>:<ListChecks size={17}/>} {busy?'Analisando…':'Analisar'}</button></div>
     <label className="survey-selector">Turma<select disabled={busy} value={id} onChange={e=>setId(e.target.value)}>{data.classes.map(c=><option key={c.id} value={c.id}>{c.code} · {c.name}</option>)}</select></label>
     {error&&<div className="alert error" role="alert"><AlertCircle size={17}/>{error}</div>}
     {st&&<div className="ai-numbers"><span><strong>{st.total}</strong> participantes</span><span><strong>{st.answered}</strong> responderam</span><span><strong>{st.pending}</strong> sem resposta vinculada</span></div>}
