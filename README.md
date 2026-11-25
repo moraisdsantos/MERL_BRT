@@ -43,6 +43,7 @@ Execute no SQL Editor do Supabase, nesta ordem:
 2. `supabase/migrations/002_form4_workflow.sql`
 3. `supabase/migrations/003_ai_and_partner_privacy.sql`
 4. `supabase/migrations/004_form3_and_issues.sql`
+5. `supabase/migrations/005_revoke_anon_rpc.sql`
 
 Crie sua conta com e-mail e senha em **Authentication → Users**. Verifique a identidade antes de confirmar o e-mail. Depois conceda a administração:
 
