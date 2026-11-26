@@ -58,11 +58,18 @@ export function classStudents(data: Dataset, classId: string) {
   const enrolled = new Map(data.enrollments.filter(e=>e.class_id===classId).map(e=>[e.student_id,e]));
   return data.students.filter(s=>enrolled.has(s.id)).map(s=>({...s,enrollment:enrolled.get(s.id)!})).sort((a,b)=>(a.name||a.urn).localeCompare(b.name||b.urn,'pt-BR'));
 }
+// Conta na turma quem assinou a frequência em pelo menos um dia OU respondeu algum formulário da turma.
+// Quem está só na lista de inscrição, sem assinatura nem resposta, não foi: fica fora das contagens e listagens.
+export function participated(data: Dataset, classId: string, s: { id: string; enrollment: Enrollment }) {
+  if (s.enrollment.attendance_verified !== false) return true;
+  const surveys = new Set(data.surveys.filter(v=>v.class_id===classId).map(v=>v.id));
+  return data.responses.some(r=>r.student_id===s.id && surveys.has(r.survey_id));
+}
 export function responseFor(data: Dataset, surveyId: string, studentId: string) { return data.responses.find(r=>r.survey_id===surveyId && r.student_id===studentId); }
 // Antes do prazo de aplicação (Form 4: 3 semanas após o fim das aulas) ninguém conta como pendente.
 export function formOpen(c: ClassRow, code: FormCode, today=new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'})) { const due=formDue(c,code); return !!due&&today>=due; }
 export function stats(data:Dataset, classroom:ClassRow, survey?:Survey) {
-  const students = classStudents(data,classroom.id).filter(s=>!s.enrollment.excluded&&s.enrollment.attendance_verified!==false);
+  const students = classStudents(data,classroom.id).filter(s=>!s.enrollment.excluded&&participated(data,classroom.id,s));
   const answered = survey ? students.filter(s=>responseFor(data,survey.id,s.id)).length : 0;
   const open = !!survey && formOpen(classroom, survey.code as FormCode);
   return {total:students.length,answered,pending:open?students.length-answered:0,waiting:survey&&!open?students.length-answered:0,percent:students.length? Math.round(100*answered/students.length):0};
