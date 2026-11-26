@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { classStudents, inferMapping, normalizeURN, parseResponseStatus, prepareImport, stats, whatsappPhone, whatsappUrl, DEFAULT_MESSAGE } from '../src/domain';
+import { isMobileDevice, classStudents, inferMapping, normalizeURN, parseResponseStatus, prepareImport, stats, whatsappPhone, whatsappUrl, DEFAULT_MESSAGE } from '../src/domain';
 import { demoDataset } from './fixtures';
 test('Brazil and international WhatsApp numbers validate and normalize',()=>{
   assert.equal(whatsappPhone('(91) 99999-9999'),'5591999999999');
@@ -14,8 +14,9 @@ test('Brazil and international WhatsApp numbers validate and normalize',()=>{
 test('WhatsApp URL fills the specific student, class, and survey, encoding the message',()=>{
   const data=demoDataset('admin');const s={...data.students[0],phone:'(91) 99999-9999'};
   const survey={...data.surveys[0],url:'https://example.org/survey?lang=pt&form=4',message_template:DEFAULT_MESSAGE};
-  const url=new URL(whatsappUrl(s,data.classes[0],survey)!);
-  assert.equal(url.host,'web.whatsapp.com');assert.equal(url.searchParams.get('phone'),'5591999999999');
+  const url=new URL(whatsappUrl(s,data.classes[0],survey,false)!);
+  assert.equal(url.host,'web.whatsapp.com');assert.equal(new URL(whatsappUrl(s,data.classes[0],survey,true)!).host,'api.whatsapp.com');
+  assert.ok(isMobileDevice('Mozilla/5.0 (Linux; Android 14; SM-A146M) AppleWebKit/537.36 Chrome/131 Mobile Safari/537.36'));assert.ok(isMobileDevice('Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148'));assert.ok(!isMobileDevice('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36'));assert.equal(url.searchParams.get('phone'),'5591999999999');
   assert.match(url.searchParams.get('text')!,/Olá! Tudo bem\?/);assert.ok(!url.searchParams.get('text')!.includes('Ana'),'mensagem não carrega nome');assert.match(url.searchParams.get('text')!,/Piloto · Básico/);
   assert.ok(url.searchParams.get('text')!.includes(survey.url));assert.ok(url.searchParams.get('text')!.includes(s.urn));
   assert.equal(whatsappUrl(s,data.classes[0],{...survey,url:'javascript:alert(1)'}),null);

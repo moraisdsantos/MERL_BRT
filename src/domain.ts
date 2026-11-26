@@ -45,10 +45,14 @@ export function renderMessage(template: string, student: Student, classroom: Cla
   return template.replace(/\{(turma|pesquisa|link|matricula)\}/g, (_, key:string) => variables[key]).replace(/\{(nome_completo|nome)\}\s?[,!]?\s?/g,'');
 }
 export const validSurveyUrl = (url: string) => { try { return new URL(url).protocol === 'https:'; } catch { return false; } };
-export function whatsappUrl(student: Student, classroom: ClassRow, survey: Survey) {
+// Celular e tablet abrem o aplicativo (api.whatsapp.com é link universal); no computador, o WhatsApp Web.
+export const isMobileDevice = (ua = typeof navigator === 'undefined' ? '' : navigator.userAgent) =>
+  /Android|iPhone|iPad|iPod|Mobile|Opera Mini|IEMobile/i.test(ua) || (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 1 && /Macintosh/.test(ua));
+export function whatsappUrl(student: Student, classroom: ClassRow, survey: Survey, mobile = isMobileDevice()) {
   const phone = whatsappPhone(student.phone);
   if (!phone || !validSurveyUrl(survey.url)) return null;
-  return `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(renderMessage(survey.message_template,student,classroom,survey))}`;
+  const host = mobile ? 'api.whatsapp.com' : 'web.whatsapp.com';
+  return `https://${host}/send?phone=${phone}&text=${encodeURIComponent(renderMessage(survey.message_template,student,classroom,survey))}`;
 }
 export function classStudents(data: Dataset, classId: string) {
   const enrolled = new Map(data.enrollments.filter(e=>e.class_id===classId).map(e=>[e.student_id,e]));
