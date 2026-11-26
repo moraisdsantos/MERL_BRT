@@ -107,18 +107,26 @@ function MessageSettings({data,formCode,busy,onSave}:{data:Dataset;formCode:Form
 }
 function DriveSource(){
   const [url,setUrl]=useState(''),[saved,setSaved]=useState(''),[updated,setUpdated]=useState<string|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[ok,setOk]=useState('');
-  useEffect(()=>{void (async()=>{try{const {data,error}=await supabase!.from('app_settings').select('value,updated_at').eq('key','drive_source_url').maybeSingle();if(error)throw error;setUrl(data?.value||'');setSaved(data?.value||'');setUpdated(data?.value?data.updated_at:null);}catch(e){setError(errorText(e));}})();},[]);
+  const [sync,setSync]=useState<{at:string;summary:Record<string,number>}|null>(null);
+  useEffect(()=>{void (async()=>{try{const {data:rows,error}=await supabase!.from('app_settings').select('key,value,updated_at').in('key',['drive_source_url','last_sync','last_sync_summary']);if(error)throw error;
+    const get=(k:string)=>(rows||[]).find(r=>r.key===k);const d=get('drive_source_url');setUrl(d?.value||'');setSaved(d?.value||'');setUpdated(d?.value?d.updated_at:null);
+    const at=get('last_sync');if(at?.value){let summary:Record<string,number>={};try{summary=JSON.parse(get('last_sync_summary')?.value||'{}');}catch{/* resumo ilegível: mostra só a data */}setSync({at:at.value,summary});}}
+    catch(e){setError(errorText(e));}})();},[]);
+  const when=(iso:string)=>new Date(iso).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).replace(', ',' às ');
   const valid=!url.trim()||/^https:\/\/(drive|docs)\.google\.com\//.test(url.trim());
   async function save(ev:FormEvent){ev.preventDefault();if(!valid)return;setBusy(true);setError('');setOk('');
     try{const value=url.trim();const {data:u}=await supabase!.auth.getUser();const {error}=await supabase!.from('app_settings').upsert({key:'drive_source_url',value,updated_at:new Date().toISOString(),updated_by:u.user?.id});if(error)throw error;setSaved(value);setUpdated(value?new Date().toISOString():null);setOk(value?'Link salvo.':'Link removido.');}
     catch(e){setError(errorText(e));}finally{setBusy(false);}}
-  return <><div className="page-heading"><div><h1>Dados</h1><p>Fonte de dados do painel no Google Drive. A sincronização com essa pasta será ligada numa próxima etapa; por enquanto, os dados são processados e carregados pela equipe MERL.</p></div></div>
+  return <><div className="page-heading"><div><h1>Dados</h1><p>O painel lê a planilha da base MERL no Drive. Cole os datasets do Kobo nas abas dos formulários; turmas, participantes, vínculos e problemas ficam nas outras abas. A planilha sincroniza a cada hora, ou pelo menu SIDP &gt; Sincronizar agora. Correções de cadastro devem ser feitas na planilha, porque a sincronização reescreve o painel.</p></div></div>
     <section className="student-panel drive-source"><form onSubmit={save}>
-      <label>Link da pasta ou planilha no Drive<input type="url" inputMode="url" placeholder="https://drive.google.com/..." value={url} onChange={e=>{setUrl(e.target.value);setOk('');}}/></label>
+      <label>Link da planilha no Drive<input type="url" inputMode="url" placeholder="https://drive.google.com/..." value={url} onChange={e=>{setUrl(e.target.value);setOk('');}}/></label>
       {!valid&&<p className="field-error">Use um link do Google Drive ou Google Docs/Sheets (https://drive.google.com/... ou https://docs.google.com/...).</p>}
       {error&&<div className="alert error" role="alert">{error}</div>}{ok&&<div className="alert success" role="status">{ok}</div>}
       <div className="drive-actions"><button className="button primary" disabled={busy||!valid||url.trim()===saved}>Salvar</button>{saved&&<a className="text-button" href={saved} target="_blank" rel="noopener noreferrer">Abrir no Drive <ExternalLink size={13}/></a>}{updated&&<span className="muted small">Atualizado em {date(updated)}</span>}</div>
-    </form></section></>;
+    </form>
+      {sync?<p className="sync-status">Última sincronização em {when(sync.at)}{sync.summary.turmas!==undefined&&<> · {sync.summary.turmas} turmas, {sync.summary.participantes} participantes, {sync.summary.respostas} respostas{sync.summary.em_revisao?<>, {sync.summary.em_revisao} aguardando vínculo</>:null}</>}</p>
+        :<p className="sync-status muted">A planilha ainda não sincronizou.</p>}
+    </section></>;
 }
 function ShareLinks({data}:{data:Dataset}){
   const [links,setLinks]=useState<Record<string,string>>({});const [error,setError]=useState('');const [busyId,setBusyId]=useState('');const [copied,setCopied]=useState('');const [filter,setFilter]=useState(emptyFilter);

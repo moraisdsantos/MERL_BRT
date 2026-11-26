@@ -371,6 +371,7 @@ select option{background:#1c1402;color:#ffffff}
 .drive-source{padding:24px;max-width:760px}
 .drive-source form{display:flex;flex-direction:column;gap:14px}
 .drive-source label{display:flex;flex-direction:column;gap:8px;font-weight:600}
+.sync-status{margin:18px 0 0;padding-top:14px;border-top:1px solid var(--line, rgba(255,224,132,.18));font-size:.92rem}
 .drive-actions{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
 .field-error{color:#ffb3b3;font-size:.85rem;margin:0}
 .alert.success{border-color:rgba(140,220,160,.5);background:rgba(60,140,80,.18);color:#d9f7e0}
