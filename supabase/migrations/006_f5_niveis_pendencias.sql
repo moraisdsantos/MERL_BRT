@@ -3,6 +3,7 @@
 alter table public.classes add column if not exists level text not null default 'Básico';
 alter table public.classes drop constraint if exists classes_level_check;
 alter table public.classes add constraint classes_level_check check (level in ('Básico','Intermediário'));
+grant select(level) on public.classes to authenticated;
 
 -- name passa a guardar só a usina; o turno já vive em shift
 update public.classes set name=split_part(name,' · ',1) where name like '% · %';
