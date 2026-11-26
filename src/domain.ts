@@ -65,6 +65,10 @@ export function participated(data: Dataset, classId: string, s: { id: string; en
   const surveys = new Set(data.surveys.filter(v=>v.class_id===classId).map(v=>v.id));
   return data.responses.some(r=>r.student_id===s.id && surveys.has(r.survey_id));
 }
+// Turma sem PDF de frequência: a presença vem da chamada, sinalizada, e ninguém é descartado.
+export const NO_PDF_FLAG = 'Presença pela chamada: turma sem PDF de frequência';
+export const missingAttendancePdf = (data: Dataset, classId: string) =>
+  data.enrollments.some(e=>e.class_id===classId && (e.attention||[]).some(a=>/sem PDF de frequ/i.test(a)));
 export function responseFor(data: Dataset, surveyId: string, studentId: string) { return data.responses.find(r=>r.survey_id===surveyId && r.student_id===studentId); }
 // Antes do prazo de aplicação (Form 4: 3 semanas após o fim das aulas) ninguém conta como pendente.
 export function formOpen(c: ClassRow, code: FormCode, today=new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'})) { const due=formDue(c,code); return !!due&&today>=due; }
