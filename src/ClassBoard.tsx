@@ -53,7 +53,7 @@ export default function ClassBoard({token}:{token:string}){
           const url=ready&&survey&&!responded&&!s.urn.startsWith('SEM-')?whatsappUrl({id:'',name:'',urn:s.urn,phone:s.phone},classroom,pseudoSurvey(survey)):null;
           return <tr key={s.urn}>
             <td><span className="urn">{s.urn.startsWith('SEM-')?'—':s.urn}</span><span className={`phone ${whatsappPhone(s.phone)?'':'phone-invalid'}`}>{s.phone||'sem telefone'}</span></td>
-            <td>{responded?<span className="status answered"><Check size={13}/>Respondeu {date(responded)}</span>:<span className="status pending">Pendente</span>}</td>
+            <td>{responded?<span className="status answered"><Check size={13}/>Respondeu {date(responded)}</span>:ready?<span className="status pending">Pendente</span>:<span className="status neutral">Aguardando prazo</span>}</td>
             <td>{url?<div className="send-cell"><a className="whatsapp-button" href={url} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp para ${s.urn}`} onClick={()=>void send(s)}><MessageSquare size={15}/>WhatsApp<ExternalLink size={12}/></a>{sent&&<small className="sent-note">Mensagem enviada em {dateTime(sent)}</small>}</div>
               :<div className="send-cell"><span className="muted small">{responded?'—':!ready?`Aguardar ${date(due)}`:!whatsappPhone(s.phone)?'Telefone indisponível':!survey?.url?'Link do formulário pendente':'—'}</span>{sent&&<small className="sent-note">Mensagem enviada em {dateTime(sent)}</small>}</div>}</td>
           </tr>;})}

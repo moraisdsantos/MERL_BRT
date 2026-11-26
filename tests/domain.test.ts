@@ -39,10 +39,11 @@ test('matching existing students permits answer files without name columns',()=>
   assert.equal(prepareImport(records,mapping,'responses',[{id:'s',urn:'L-B1-0001',name:'Maria',phone:''}]).errors.length,0);
 });
 test('class denominators exclude inactive students, and partner demo exposes only assigned classes',()=>{
-  const data=demoDataset('admin');const first=data.classes[0];const survey=data.surveys[0];
-  assert.deepEqual(stats(data,first,survey),{total:22,answered:16,pending:6,percent:73});
+  const data=demoDataset('admin');const first={...data.classes[0],followup_on:'2026-01-01'};const survey=data.surveys[0];
+  assert.deepEqual(stats(data,first,survey),{total:22,answered:16,pending:6,waiting:0,percent:73});
+  assert.deepEqual(stats(data,{...first,followup_on:'2999-01-01'},survey),{total:22,answered:16,pending:0,waiting:6,percent:73},'antes do prazo do Form 4 ninguém conta como pendente');
   data.enrollments.find(e=>e.student_id===data.students[0].id)!.excluded=true;
-  assert.deepEqual(stats(data,first,survey),{total:21,answered:15,pending:6,percent:71});
+  assert.deepEqual(stats(data,first,survey),{total:21,answered:15,pending:6,waiting:0,percent:71});
   const partner=demoDataset('partner');assert.equal(partner.classes.length,2);assert.equal(partner.answers.length,0);
   assert.equal(classStudents(partner,'class-3').length,0);
 });

@@ -55,10 +55,13 @@ export function classStudents(data: Dataset, classId: string) {
   return data.students.filter(s=>enrolled.has(s.id)).map(s=>({...s,enrollment:enrolled.get(s.id)!})).sort((a,b)=>(a.name||a.urn).localeCompare(b.name||b.urn,'pt-BR'));
 }
 export function responseFor(data: Dataset, surveyId: string, studentId: string) { return data.responses.find(r=>r.survey_id===surveyId && r.student_id===studentId); }
+// Antes do prazo de aplicação (Form 4: 3 semanas após o fim das aulas) ninguém conta como pendente.
+export function formOpen(c: ClassRow, code: FormCode, today=new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'})) { const due=formDue(c,code); return !!due&&today>=due; }
 export function stats(data:Dataset, classroom:ClassRow, survey?:Survey) {
   const students = classStudents(data,classroom.id).filter(s=>!s.enrollment.excluded&&s.enrollment.attendance_verified!==false);
   const answered = survey ? students.filter(s=>responseFor(data,survey.id,s.id)).length : 0;
-  return {total:students.length,answered,pending:survey?students.length-answered:0,percent:students.length? Math.round(100*answered/students.length):0};
+  const open = !!survey && formOpen(classroom, survey.code as FormCode);
+  return {total:students.length,answered,pending:open?students.length-answered:0,waiting:survey&&!open?students.length-answered:0,percent:students.length? Math.round(100*answered/students.length):0};
 }
 const simplify = (s:unknown) => String(s??'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 export function parseResponseStatus(value: unknown): boolean | null {
