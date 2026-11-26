@@ -27,7 +27,7 @@ export function parseManagement(text:string){
     const existing=rows.find(x=>x.code===code);if(existing){if(existing.starts_on!==start||existing.ends_on!==end)errors.push(`${code}: datas divergentes em linhas repetidas.`);continue;}
     const url=String(r[columns.url]??'').trim();const source:Record<string,unknown>={};header.forEach((name,j)=>{if(name.trim()&&!Object.hasOwn(source,name))source[name]=r[j]??'';});
     const level=/intermedi/i.test(String(r[columns.level]??''))?'Intermediário':String(r[columns.level]??'').trim()?'Básico':'';
-    rows.push({code,name:String(r[columns.name]??'').trim()||code,shift:String(r[columns.shift]??'').trim(),level,starts_on:start,ends_on:end,followup_on:plusDays(end,28),url:/^https:\/\//.test(url)?url:'',source});
+    rows.push({code,name:String(r[columns.name]??'').trim()||code,shift:String(r[columns.shift]??'').trim(),level,starts_on:start,ends_on:end,followup_on:plusDays(end,21),url:/^https:\/\//.test(url)?url:'',source});
   }
   if(!rows.length&&!errors.length)errors.push('Nenhuma turma válida encontrada.');
   return {rows,errors};

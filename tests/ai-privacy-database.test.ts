@@ -38,7 +38,7 @@ test('v3 protects names at database level and keeps AI separate from official re
     });
     await t.test('AI snapshot omits phones, survey answers and raw imports; concurrent class runs are blocked',async()=>{
       const started=(await q('select begin_ai_analysis($1) as result',[cid])).rows[0].result as any;run=started.run_id;
-      assert.equal(started.snapshot.participants[0].name,'Ana Maria Silva');assert.equal(started.snapshot.class.followup_on,'2026-09-04');assert.equal(started.snapshot.classes.length,2);assert.equal(started.snapshot.submissions[0].name,'Ana Silva');
+      assert.equal(started.snapshot.participants[0].name,'Ana Maria Silva');assert.equal(started.snapshot.class.followup_on,'2026-08-28');assert.equal(started.snapshot.classes.length,2);assert.equal(started.snapshot.submissions[0].name,'Ana Silva');
       const encoded=json(started.snapshot);for(const secret of ['PRIVATE','91999990000','answers','raw_rows','phone','candidates'])assert.ok(!encoded.includes(secret),secret);
       await assert.rejects(()=>q('select begin_ai_analysis($1)',[cid]),/em andamento/);await login(otherAdmin);await assert.rejects(()=>q('select finish_ai_analysis($1,$2::jsonb,$3,$4)',[run,json({}), 'test','']),/esta conta/);await login(admin);
       assert.equal((await q('select * from response_status')).rows.length,0);

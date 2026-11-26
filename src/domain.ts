@@ -6,7 +6,7 @@ export type ClassRow = { id: string; code: string; name: string; partner: string
 // O código da turma é variável interna; a identificação visível é usina + turno.
 export const classLabel = (c: ClassRow) => `${c.name}${c.shift?` · ${c.shift}`:''}`;
 export const classLevel = (c: ClassRow) => c.level||'Básico';
-// Regras de aplicação: F3 na primeira aula das turmas básicas; F4 para todas após 4 semanas;
+// Regras de aplicação: F3 na primeira aula das turmas básicas; F4 para todas 3 semanas após a conclusão;
 // F5 (Pré) na primeira e F5 (Pós) na última aula das turmas de nível intermediário.
 export const formApplies = (c: ClassRow, code: FormCode) => code==='F4' ? true : code==='F3' ? classLevel(c)==='Básico' : classLevel(c)==='Intermediário';
 export const formDue = (c: ClassRow, code: FormCode): string|null|undefined => code==='F4' ? c.followup_on : code==='F5POS' ? c.ends_on : c.starts_on;

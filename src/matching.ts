@@ -15,7 +15,7 @@ export function nameScore(a:unknown,b:unknown){
   const score=similarity(na,nb)*.65+tokenOverlap*.25+(anchors?.1:0);
   return {score:Math.min(.94,score),reason:'Variação de nome'};
 }
-export function timingFlags(date:string|null,classId:string,data:Dataset,code:FormCode='F4'){const c=data.classes.find(c=>c.id===classId);if(!date)return ['Data da resposta ausente'];const day=brazilToday(new Date(date));if(c?.starts_on&&day<c.starts_on)return ['Resposta anterior à turma'];if(code==='F4'&&c?.followup_on&&day<c.followup_on)return ['Resposta antes de 4 semanas'];return [];}
+export function timingFlags(date:string|null,classId:string,data:Dataset,code:FormCode='F4'){const c=data.classes.find(c=>c.id===classId);if(!date)return ['Data da resposta ausente'];const day=brazilToday(new Date(date));if(c?.starts_on&&day<c.starts_on)return ['Resposta anterior à turma'];if(code==='F4'&&c?.followup_on&&day<c.followup_on)return ['Resposta antes de 3 semanas'];return [];}
 export function matchSubmission(urn:string,name:string,phone:string,date:string|null,data:Dataset,code:FormCode='F4'){
   const id=compactURN(urn),validId=/^[LT][A-Z]\d+[A-Z0-9]*$/.test(id);const phoneId=whatsappPhone(phone);
   const candidates:MatchCandidate[]=[];let identityConflict=false;

@@ -16,7 +16,7 @@ test('WhatsApp URL fills the specific student, class, and survey, encoding the m
   const survey={...data.surveys[0],url:'https://example.org/survey?lang=pt&form=4',message_template:DEFAULT_MESSAGE};
   const url=new URL(whatsappUrl(s,data.classes[0],survey)!);
   assert.equal(url.host,'web.whatsapp.com');assert.equal(url.searchParams.get('phone'),'5591999999999');
-  assert.match(url.searchParams.get('text')!,/Olá, Ana!/);assert.match(url.searchParams.get('text')!,/T01/);
+  assert.match(url.searchParams.get('text')!,/Olá! Tudo bem\?/);assert.ok(!url.searchParams.get('text')!.includes('Ana'),'mensagem não carrega nome');assert.match(url.searchParams.get('text')!,/Piloto · Básico/);
   assert.ok(url.searchParams.get('text')!.includes(survey.url));assert.ok(url.searchParams.get('text')!.includes(s.urn));
   assert.equal(whatsappUrl(s,data.classes[0],{...survey,url:'javascript:alert(1)'}),null);
 });

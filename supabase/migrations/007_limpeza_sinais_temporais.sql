@@ -1,8 +1,8 @@
--- 007: prazo do Form 4 passa de 3 para 4 semanas também nos sinais calculados no banco
+-- 007: refresh_submission limpa sinais temporais antigos antes de recalcular (prazo do Form 4 segue 3 semanas)
 create or replace function private.form_flags(p_date timestamptz,p_class uuid,p_code text) returns text[] language sql stable security definer set search_path='' as $$
   select case when p_date is null then array['Data da resposta ausente']::text[]
     when (p_date at time zone 'America/Sao_Paulo')::date<c.starts_on then array['Resposta anterior à turma']::text[]
-    when p_code='F4' and (p_date at time zone 'America/Sao_Paulo')::date<c.followup_on then array['Resposta antes de 4 semanas']::text[]
+    when p_code='F4' and (p_date at time zone 'America/Sao_Paulo')::date<c.followup_on then array['Resposta antes de 3 semanas']::text[]
     else '{}'::text[] end
   from public.classes c where id=p_class;
 $$;

@@ -1,4 +1,4 @@
--- 006: nível da turma, Form 5 (Pré/Pós), Form 4 após 4 semanas, mensagens sem {nome}
+-- 006: nível da turma, Form 5 (Pré/Pós), mensagens sem {nome}
 -- Aplicada no projeto sidp-merl em 26/11/2026 via MCP; mantida aqui para versionamento.
 alter table public.classes add column if not exists level text not null default 'Básico';
 alter table public.classes drop constraint if exists classes_level_check;
@@ -6,10 +6,6 @@ alter table public.classes add constraint classes_level_check check (level in ('
 
 -- name passa a guardar só a usina; o turno já vive em shift
 update public.classes set name=split_part(name,' · ',1) where name like '% · %';
-
--- Form 4 após 4 semanas (antes: 3)
-update public.classes set followup_on=ends_on+28 where ends_on is not null;
-update public.surveys s set due_date=c.ends_on+28 from public.classes c where c.id=s.class_id and s.code='F4';
 
 -- Form 5 (Pré/Pós)
 alter table public.form4_submissions drop constraint form4_submissions_form_code_check;
@@ -26,9 +22,9 @@ from public.classes c on conflict(class_id,code) do nothing;
 
 -- mensagens sem {nome} e sem travessão
 update public.surveys set message_template=E'Olá! Aqui é a equipe do projeto SIDP. Durante as aulas da turma {turma}, pedimos que você responda ao Form 3 pelo link: {link}\n\nMatrícula: {matricula}\nObrigado!\nEquipe MERL · ARCA' where code='F3' and message_template like '%{nome}%';
-update public.surveys set message_template=E'Olá! Aqui é a equipe do projeto SIDP. Sua turma {turma} encerrou há quatro semanas. Você pode responder ao Form 4 pelo link: {link}\n\nMatrícula: {matricula}\nObrigado!\nEquipe MERL · ARCA' where code='F4' and message_template like '%{nome}%';
+update public.surveys set message_template=E'Olá! Aqui é a equipe do projeto SIDP. Sua turma {turma} encerrou há três semanas. Você pode responder ao Form 4 pelo link: {link}\n\nMatrícula: {matricula}\nObrigado!\nEquipe MERL · ARCA' where code='F4' and message_template like '%{nome}%';
 
--- import_management: nível, Form 5, 4 semanas, mensagens novas
+-- import_management: nível, Form 5, mensagens novas
 create or replace function public.import_management(p_rows jsonb, p_filename text)
 returns integer language plpgsql security definer set search_path to ''
 as $function$
@@ -42,10 +38,10 @@ begin
     start_date:=(r->>'starts_on')::date;end_date:=(r->>'ends_on')::date;
     if start_date is null or end_date is null or end_date<start_date then raise exception 'Invalid class dates';end if;
     insert into public.classes(code,name,partner,starts_on,ends_on,followup_on,shift,level,management_imported,management_source)
-    values(r->>'code',coalesce(nullif(r->>'name',''),r->>'code'),'',start_date,end_date,end_date+28,coalesce(r->>'shift',''),coalesce(nullif(r->>'level',''),'Básico'),true,coalesce(r->'source','{}'))
+    values(r->>'code',coalesce(nullif(r->>'name',''),r->>'code'),'',start_date,end_date,end_date+21,coalesce(r->>'shift',''),coalesce(nullif(r->>'level',''),'Básico'),true,coalesce(r->'source','{}'))
     on conflict(code) do update set name=excluded.name,starts_on=excluded.starts_on,ends_on=excluded.ends_on,followup_on=excluded.followup_on,shift=excluded.shift,level=coalesce(nullif(r->>'level',''),public.classes.level),management_imported=true,management_source=excluded.management_source returning id into cid;
     insert into public.surveys(class_id,code,name,url,due_date,message_template)
-    values(cid,'F4','Form 4',case when r->>'url' ~ '^https://' then r->>'url' else '' end,end_date+28,E'Olá! Aqui é a equipe do projeto SIDP. Sua turma {turma} encerrou há quatro semanas. Você pode responder ao Form 4 pelo link: {link}\n\nMatrícula: {matricula}\nObrigado!\nEquipe MERL · ARCA')
+    values(cid,'F4','Form 4',case when r->>'url' ~ '^https://' then r->>'url' else '' end,end_date+21,E'Olá! Aqui é a equipe do projeto SIDP. Sua turma {turma} encerrou há três semanas. Você pode responder ao Form 4 pelo link: {link}\n\nMatrícula: {matricula}\nObrigado!\nEquipe MERL · ARCA')
     on conflict(class_id,code) do update set due_date=excluded.due_date,url=coalesce(nullif(excluded.url,''),public.surveys.url);
     insert into public.surveys(class_id,code,name,url,due_date,message_template)
     values(cid,'F3','Form 3','',end_date,E'Olá! Aqui é a equipe do projeto SIDP. Durante as aulas da turma {turma}, pedimos que você responda ao Form 3 pelo link: {link}\n\nMatrícula: {matricula}\nObrigado!\nEquipe MERL · ARCA')
