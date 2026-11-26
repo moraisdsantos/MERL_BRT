@@ -1,6 +1,6 @@
 import { useMemo,useState } from 'react';
 import { PieChart,Users } from 'lucide-react';
-import { formLabel,submissionForm,type Dataset,type FormCode } from './domain';
+import { classLabel,formLabel,submissionForm,type Dataset,type FormCode } from './domain';
 
 // Dimensões demográficas do Kobo, detectadas pelo nome da coluna no export.
 const DIMENSIONS:[string,RegExp][]=[
@@ -47,7 +47,7 @@ export default function Metrics({data,formCode}:{data:Dataset;formCode:FormCode}
   }).filter(d=>d.total>0),[linked]);
   return <>
     <div className="page-heading"><div><h1>Métricas · {formLabel(formCode)}</h1><p>Perfil das pessoas participantes a partir das respostas vinculadas. Contagens, nunca respostas individuais.</p></div>
-      <label className="survey-selector inline"><span className="sr-only">Turma</span><select value={classId} onChange={e=>setClassId(e.target.value)}><option value="todas">Todas as turmas</option>{data.classes.map(c=><option key={c.id} value={c.id}>{c.code} · {c.name}</option>)}</select></label></div>
+      <label className="survey-selector inline"><span className="sr-only">Turma</span><select value={classId} onChange={e=>setClassId(e.target.value)}><option value="todas">Todas as turmas</option>{data.classes.map(c=><option key={c.id} value={c.id}>{classLabel(c)}</option>)}</select></label></div>
     <div className="metrics compact"><div className="metric"><div><span>Pessoas com resposta vinculada</span><span className="metric-icon"><Users size={18}/></span></div><strong>{linked.length}</strong></div>
       <div className="metric"><div><span>Dimensões disponíveis</span><span className="metric-icon"><PieChart size={18}/></span></div><strong>{dimensions.length}</strong></div></div>
     {dimensions.length?<div className="metric-grid">{dimensions.map(d=><section className="panel metric-block" key={d.label}>
@@ -58,6 +58,5 @@ export default function Metrics({data,formCode}:{data:Dataset;formCode:FormCode}
         <span className="bar-value">{r.n}<small>{pct.toFixed(1).replace('.',',')}%</small></span>
       </li>;})}</ul>
     </section>)}</div>:<div className="empty"><PieChart size={25}/><p>Sem respostas vinculadas de {formLabel(formCode)} {classId==='todas'?'nas turmas importadas':'nesta turma'} até aqui. As métricas aparecem depois da importação e conferência das respostas.</p></div>}
-    <p className="muted small metric-note">Fonte: respostas do {formLabel(formCode)} no Kobo, vinculadas às chamadas pelo fluxo de conferência. Pessoas com mais de um envio contam uma vez, pela resposta mais recente.</p>
   </>;
 }

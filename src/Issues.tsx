@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { AlertTriangle,Check,CheckCircle2,Pencil,Plus,RotateCcw,Search } from 'lucide-react';
 import Dialog from './Dialog';
-import { ISSUE_CATEGORIES,type Dataset,type Issue } from './domain';
+import { ISSUE_CATEGORIES,classLabel,type Dataset,type Issue } from './domain';
 
 const categoryLabel=(c:Issue['category'])=>ISSUE_CATEGORIES.find(([id])=>id===c)?.[1]||c;
 const date=(value?:string|null)=>value?new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'America/Sao_Paulo'}).format(new Date(value)):'—';
@@ -17,13 +17,13 @@ export default function Issues({data,admin,busy,onSave,onStatus}:{data:Dataset;a
   const [query,setQuery]=useState('');
   const [draft,setDraft]=useState<Draft|null>(null);
   const [resolving,setResolving]=useState<Issue|null>(null);
-  const classCode=(id:string)=>data.classes.find(c=>c.id===id)?.code||'—';
+  const classCode=(id:string)=>{const c=data.classes.find(c=>c.id===id);return c?classLabel(c):'—';};
   const visible=[...data.issues]
     .filter(i=>(filter==='todas'||i.status===filter)&&(category==='todas'||i.category===category)&&`${i.title} ${i.detail} ${i.recommendation}`.toLowerCase().includes(query.toLowerCase()))
     .sort((a,b)=>Number(a.status==='resolvida')-Number(b.status==='resolvida')||b.created_at.localeCompare(a.created_at));
   const open=data.issues.filter(i=>i.status==='aberta').length;
   return <>
-    <div className="page-heading"><div><h1>Problemas</h1><p>{open?`${open} em aberto`:'Nada em aberto'} · registro de campo compartilhado com as implementadoras das turmas citadas</p></div>
+    <div className="page-heading"><div><h1>Problemas</h1><p>{open?`${open} em aberto`:'Nada em aberto'}</p></div>
       {admin&&<button className="button primary" onClick={()=>setDraft(emptyDraft())}><Plus size={17}/>Registrar problema</button>}</div>
     <section className="student-panel">
       <div className="list-toolbar">
@@ -64,7 +64,7 @@ function IssueDialog({draft,data,busy,onClose,onSave}:{draft:Draft;data:Dataset;
       <label>Detalhe<textarea rows={3} value={d.detail} onChange={e=>setD({...d,detail:e.target.value})} placeholder="Contexto: quem, quando, qual arquivo"/></label>
       <label>Encaminhamento<textarea rows={2} value={d.recommendation} onChange={e=>setD({...d,recommendation:e.target.value})} placeholder="O que precisa acontecer para resolver"/></label>
       <fieldset className="class-checks"><legend>Turmas afetadas (vazio = geral)</legend>
-        {data.classes.map(c=><label className="checkbox-label" key={c.id}><input type="checkbox" checked={d.class_ids.includes(c.id)} onChange={e=>setD({...d,class_ids:e.target.checked?[...d.class_ids,c.id]:d.class_ids.filter(x=>x!==c.id)})}/><span>{c.code} · {c.name}</span></label>)}
+        {data.classes.map(c=><label className="checkbox-label" key={c.id}><input type="checkbox" checked={d.class_ids.includes(c.id)} onChange={e=>setD({...d,class_ids:e.target.checked?[...d.class_ids,c.id]:d.class_ids.filter(x=>x!==c.id)})}/><span>{classLabel(c)}</span></label>)}
       </fieldset>
       <div className="dialog-actions"><button type="button" className="button secondary" disabled={busy} onClick={onClose}>Cancelar</button><button className="button primary" disabled={busy||!d.title.trim()}>Salvar<Check size={16}/></button></div>
     </form>

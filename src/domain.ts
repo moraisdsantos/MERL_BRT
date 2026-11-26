@@ -1,8 +1,15 @@
 export type Role = 'admin' | 'partner';
-export type FormCode = 'F3' | 'F4';
-export const FORM_CODES: FormCode[] = ['F3','F4'];
-export const formLabel = (code: FormCode) => code==='F3' ? 'Form 3' : 'Form 4';
-export type ClassRow = { id: string; code: string; name: string; partner: string; starts_on?:string|null; ends_on?:string|null; followup_on?:string|null; shift?:string; management_imported?:boolean };
+export type FormCode = 'F3' | 'F4' | 'F5PRE' | 'F5POS';
+export const FORM_CODES: FormCode[] = ['F3','F4','F5PRE','F5POS'];
+export const formLabel = (code: FormCode) => ({F3:'Form 3',F4:'Form 4',F5PRE:'Form 5 (Pré)',F5POS:'Form 5 (Pós)'} as const)[code];
+export type ClassRow = { id: string; code: string; name: string; partner: string; starts_on?:string|null; ends_on?:string|null; followup_on?:string|null; shift?:string; level?:string; management_imported?:boolean };
+// O código da turma é variável interna; a identificação visível é usina + turno.
+export const classLabel = (c: ClassRow) => `${c.name}${c.shift?` · ${c.shift}`:''}`;
+export const classLevel = (c: ClassRow) => c.level||'Básico';
+// Regras de aplicação: F3 na primeira aula das turmas básicas; F4 para todas após 4 semanas;
+// F5 (Pré) na primeira e F5 (Pós) na última aula das turmas de nível intermediário.
+export const formApplies = (c: ClassRow, code: FormCode) => code==='F4' ? true : code==='F3' ? classLevel(c)==='Básico' : classLevel(c)==='Intermediário';
+export const formDue = (c: ClassRow, code: FormCode): string|null|undefined => code==='F4' ? c.followup_on : code==='F5POS' ? c.ends_on : c.starts_on;
 export type Survey = { id: string; class_id: string; code: string; name: string; url: string; due_date: string | null; message_template: string };
 export type Student = { id: string; urn: string; name: string; phone: string };
 export type Enrollment = { class_id: string; student_id: string; excluded: boolean; exclusion_reason: string; attention?:string[]; review_pending?:boolean; attendance_verified?:boolean };
@@ -16,11 +23,11 @@ export type Form4Submission={id:string;external_id:string;form_code?:FormCode;so
 export type Issue={id:string;category:'frequencia'|'chamada'|'urn'|'formulario'|'outra';title:string;detail:string;recommendation:string;class_ids:string[];status:'aberta'|'resolvida';created_at:string;resolved_at:string|null;resolution_note:string};
 export const ISSUE_CATEGORIES:[Issue['category'],string][]=[['frequencia','Frequência'],['chamada','Chamada'],['urn','URN'],['formulario','Formulário'],['outra','Outra']];
 export const submissionForm=(s:Form4Submission):FormCode=>s.form_code||'F4';
-export type SourceImport={id:string;kind:'management'|'attendance'|'form4'|'form3';filename:string;imported_at:string;row_count:number;metadata:Record<string,unknown>};
+export type SourceImport={id:string;kind:'management'|'attendance'|'form4'|'form3'|'form5';filename:string;imported_at:string;row_count:number;metadata:Record<string,unknown>};
 export type ImportKind = 'roster' | 'responses';
 export type Mapping = { urn: string; name: string; phone: string; status: string; submittedAt: string };
 export type ImportRow = { urn: string; name: string; phone: string; responded: boolean; submitted_at: string | null; answers: Record<string, unknown> };
-export const DEFAULT_MESSAGE = 'Olá, {nome}! Tudo bem? Aqui é a equipe do projeto SIDP — British Council, Fase V. Sua participação na pesquisa {pesquisa}, da turma {turma}, é muito importante.\n\nVocê pode responder pelo link: {link}\n\nSua matrícula é {matricula}. Se já respondeu, por favor nos avise. Obrigado!\nEquipe MERL · ARCA';
+export const DEFAULT_MESSAGE = 'Olá! Tudo bem? Aqui é a equipe do projeto SIDP. Sua participação na pesquisa {pesquisa}, da turma {turma}, é muito importante.\n\nVocê pode responder pelo link: {link}\n\nSua matrícula é {matricula}. Se já respondeu, por favor nos avise. Obrigado!\nEquipe MERL · ARCA';
 export const emptyDataset = (): Dataset => ({classes:[],surveys:[],students:[],enrollments:[],responses:[],answers:[],profiles:[],assignments:[],submissions:[],sources:[],issues:[]});
 export const normalizeURN = (value: unknown) => String(value ?? '').trim().toUpperCase().replace(/[–—]/g, '-');
 export function whatsappPhone(value: unknown): string | null {
@@ -32,15 +39,16 @@ export function whatsappPhone(value: unknown): string | null {
   if (digits.startsWith('55')) return /^55[1-9]\d(?:9\d{8}|[2-5]\d{7})$/.test(digits) ? digits : null;
   return /^(?:\+|00)/.test(raw) && /^[1-9]\d{7,14}$/.test(digits) ? digits : null;
 }
-export function renderMessage(template: string, student: Student, classroom: ClassRow, survey: Survey, urnOnly=false) {
-  const variables: Record<string,string> = {nome:urnOnly?student.urn:student.name.split(' ')[0],nome_completo:urnOnly?student.urn:student.name,turma:classroom.code,pesquisa:survey.name,link:survey.url,matricula:student.urn};
-  return template.replace(/\{(nome_completo|nome|turma|pesquisa|link|matricula)\}/g, (_, key:string) => variables[key]);
+export function renderMessage(template: string, student: Student, classroom: ClassRow, survey: Survey) {
+  // Sem {nome}: as mensagens não carregam o nome da participante.
+  const variables: Record<string,string> = {turma:classLabel(classroom),pesquisa:survey.name,link:survey.url,matricula:student.urn};
+  return template.replace(/\{(turma|pesquisa|link|matricula)\}/g, (_, key:string) => variables[key]).replace(/\{(nome_completo|nome)\}\s?[,!]?\s?/g,'');
 }
 export const validSurveyUrl = (url: string) => { try { return new URL(url).protocol === 'https:'; } catch { return false; } };
-export function whatsappUrl(student: Student, classroom: ClassRow, survey: Survey, urnOnly=false) {
+export function whatsappUrl(student: Student, classroom: ClassRow, survey: Survey) {
   const phone = whatsappPhone(student.phone);
   if (!phone || !validSurveyUrl(survey.url)) return null;
-  return `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(renderMessage(survey.message_template,student,classroom,survey,urnOnly))}`;
+  return `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(renderMessage(survey.message_template,student,classroom,survey))}`;
 }
 export function classStudents(data: Dataset, classId: string) {
   const enrolled = new Map(data.enrollments.filter(e=>e.class_id===classId).map(e=>[e.student_id,e]));

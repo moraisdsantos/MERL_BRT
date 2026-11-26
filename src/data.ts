@@ -4,7 +4,7 @@ async function allRows(table:string) {
   const all:unknown[]=[];
   for(let offset=0;;offset+=500) {
     const firstKey=({enrollments:'student_id',class_access:'user_id',response_answers:'response_id'} as Record<string,string>)[table]||'id';
-    const selection:string=table==='classes'?'id,code,name,partner,starts_on,ends_on,followup_on,shift,management_imported':table==='source_imports'?'id,kind,filename,imported_at,row_count,metadata':'*';
+    const selection:string=table==='classes'?'id,code,name,partner,starts_on,ends_on,followup_on,shift,level,management_imported':table==='source_imports'?'id,kind,filename,imported_at,row_count,metadata':'*';
     let q=supabase!.from(table).select(selection).order(firstKey);
     if(table==='enrollments'||table==='class_access')q=q.order('class_id');
     const {data,error}=await q.range(offset,offset+499);

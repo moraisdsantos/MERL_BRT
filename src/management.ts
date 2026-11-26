@@ -1,5 +1,5 @@
 import Papa from 'papaparse';
-export type ManagedClass={code:string;name:string;shift:string;starts_on:string;ends_on:string;followup_on:string;url:string;source:Record<string,unknown>};
+export type ManagedClass={code:string;name:string;shift:string;level:string;starts_on:string;ends_on:string;followup_on:string;url:string;source:Record<string,unknown>};
 export function parseDate(value:unknown):string|null {
   const s=String(value??'').trim();let y:number,m:number,d:number;
   const br=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);const iso=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -17,7 +17,7 @@ export function parseManagement(text:string){
   const matrix=parsed.data;const h=matrix.findIndex(r=>r.some(x=>['idturma','turma'].includes(key(x))));
   if(h<0)throw new Error('Coluna ID_Turma não encontrada.');
   const header=matrix[h];const index=(names:string[])=>header.findIndex(x=>names.includes(key(x)));
-  const columns={code:index(['idturma','turma']),name:index(['centrodetreinamento','centro','local']),shift:index(['turno']),start:index(['iniciodaturma','iniciodasaulas','inicio']),end:index(['conclusaodaturma','fimdaturma','conclusao','termino']),url:index(['urldivulgacao','form4url','linkform4'])};
+  const columns={code:index(['idturma','turma']),name:index(['centrodetreinamento','centro','local']),shift:index(['turno']),level:index(['nivel','niveldaturma']),start:index(['iniciodaturma','iniciodasaulas','inicio']),end:index(['conclusaodaturma','fimdaturma','conclusao','termino']),url:index(['urldivulgacao','form4url','linkform4'])};
   if(columns.start<0||columns.end<0)throw new Error('Informe Início da Turma e Conclusão da Turma.');
   const rows:ManagedClass[]=[];const errors:string[]=[];
   for(let i=h+1;i<matrix.length;i++){
@@ -26,7 +26,8 @@ export function parseManagement(text:string){
     if(!start||!end||end<start){errors.push(`${code}: datas inválidas.`);continue;}
     const existing=rows.find(x=>x.code===code);if(existing){if(existing.starts_on!==start||existing.ends_on!==end)errors.push(`${code}: datas divergentes em linhas repetidas.`);continue;}
     const url=String(r[columns.url]??'').trim();const source:Record<string,unknown>={};header.forEach((name,j)=>{if(name.trim()&&!Object.hasOwn(source,name))source[name]=r[j]??'';});
-    rows.push({code,name:String(r[columns.name]??'').trim()||code,shift:String(r[columns.shift]??'').trim(),starts_on:start,ends_on:end,followup_on:plusDays(end,21),url:/^https:\/\//.test(url)?url:'',source});
+    const level=/intermedi/i.test(String(r[columns.level]??''))?'Intermediário':String(r[columns.level]??'').trim()?'Básico':'';
+    rows.push({code,name:String(r[columns.name]??'').trim()||code,shift:String(r[columns.shift]??'').trim(),level,starts_on:start,ends_on:end,followup_on:plusDays(end,28),url:/^https:\/\//.test(url)?url:'',source});
   }
   if(!rows.length&&!errors.length)errors.push('Nenhuma turma válida encontrada.');
   return {rows,errors};
