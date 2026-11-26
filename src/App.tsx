@@ -78,7 +78,7 @@ export default function App(){
       {page==='issues'&&<Issues data={data} admin={!!admin} busy={busy} onSave={async(id,category,title,detail,recommendation,classIds)=>{await mutate(()=>rpc('save_issue',{p_id:id,p_category:category,p_title:title,p_detail:detail,p_recommendation:recommendation,p_class_ids:classIds}),'Problema salvo.');}} onStatus={async(id,status,note)=>{await mutate(()=>rpc('set_issue_status',{p_id:id,p_status:status,p_note:note}),status==='resolvida'?'Problema resolvido.':'Problema reaberto.');}}/>}
       {page==='metrics'&&admin&&<Metrics data={data} formCode={formCode}/>}
       {page==='access'&&admin&&<ShareLinks data={data}/>}
-      <footer><span>MERL · ARCA</span></footer>
+      <footer><span>MERL · ARCA</span><span className="build-version">versão {__BUILD_VERSION__}</span></footer>
     </div></main>{toast&&<div className="toast" role="status"><CheckCircle2 size={18}/>{toast}</div>}
     {editing&&classroom&&admin&&<StudentDialog student={editing} classroom={classroom} data={data} onClose={()=>setEditing(null)} onSave={async(urn,name,phone,targetClass,excluded,reason)=>{await mutate(()=>rpc('save_participant',{p_student_id:editing.id,p_class_id:classroom.id,p_to_class:targetClass,p_urn:urn,p_name:name,p_phone:phone,p_excluded:excluded,p_reason:reason}),'Participante atualizado.');setEditing(null);}}/>}
   </div>;
