@@ -12,10 +12,10 @@ test('Form 4 workflow migration: board → verified attendance → reviewable an
   const q=(sql:string,p:unknown[]=[])=>db.query(sql,p);const json=(value:unknown)=>JSON.stringify(value);let cid='',student='';
   try{
     await login(admin);
-    await t.test('only the management import creates classes; ending plus 21 days is authoritative',async()=>{
+    await t.test('only the management import creates classes; ending plus 28 days is authoritative',async()=>{
       assert.equal((await q('select id from classes')).rows.length,0);
       await q('select import_management($1::jsonb,$2)',[json([{code:'T01',name:'CENTUR',starts_on:'2026-08-03',ends_on:'2026-08-07',followup_on:'2099-01-01',url:''}]),'board.csv']);
-      const c=(await q('select id,followup_on::text from classes')).rows[0];cid=String(c.id);assert.equal(c.followup_on,'2026-08-28');assert.equal((await q('select code from surveys')).rows[0].code,'F4');
+      const c=(await q('select id,followup_on::text from classes')).rows[0];cid=String(c.id);assert.equal(c.followup_on,'2026-09-04');assert.equal((await q('select code from surveys')).rows[0].code,'F4');
     });
     await t.test('attendance requires explicit verification and preserves exclusions across reuploads',async()=>{
       await assert.rejects(()=>q('select import_attendance($1,$2::jsonb,$3)',[cid,json([{urn:'L-B10001',name:'Ana Silva'}]),'list.pdf']),/Confirm participant attendance/);
@@ -33,7 +33,7 @@ test('Form 4 workflow migration: board → verified attendance → reviewable an
     await t.test('manual review creates status, flags an early answer, and survives a conflicting reimport',async()=>{
       const id=String((await q('select id from form4_submissions')).rows[0].id);
       await q('select resolve_form4($1,$2,$3,$4,$5)',[id,student,cid,'linked','Identity checked']);
-      assert.equal((await q('select * from response_status')).rows.length,1);assert.ok(((await q('select attention from response_status')).rows[0].attention as string[]).includes('Resposta antes de 3 semanas'));
+      assert.equal((await q('select * from response_status')).rows.length,1);assert.ok(((await q('select attention from response_status')).rows[0].attention as string[]).includes('Resposta antes de 4 semanas'));
       assert.equal((await q('select answers from response_answers')).rows[0].answers?.['Q1'],'FULL ANSWER');
       await q('select import_form4($1::jsonb,$2::jsonb,$3)',[json([submission('one')]),json([]),'form4.csv']);assert.equal((await q('select state,match_origin from form4_submissions')).rows[0].state,'linked');
       await q('select resolve_form4($1,null,null,$2,$3)',[id,'ignored','Not a valid record']);assert.equal((await q('select * from response_status')).rows.length,0);assert.equal((await q('select * from form4_submissions')).rows.length,1);

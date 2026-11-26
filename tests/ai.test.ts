@@ -33,12 +33,15 @@ test('refused, incomplete and malformed provider responses never become an analy
   assert.throws(()=>extractAdviceResponse({status:'completed',output:[{type:'message',content:[{type:'refusal',refusal:'No'}]}]},snapshot()));
   assert.throws(()=>extractAdviceResponse({status:'completed',output:[{type:'message',content:[{type:'output_text',text:'broken json'}]}]},snapshot()));
 });
-test('partner message substitutes both name placeholders with URN',()=>{
+test('messages never carry the participant name, even with legacy placeholders',()=>{
   const student={id:'s',urn:'L-B10001',name:'Ana Maria Silva',phone:'5591999990000'};
-  const classroom={id:cid,code:'T01',name:'Centro',partner:'',starts_on:'',ends_on:'',followup_on:'',shift:'',management_imported:true};
-  const survey={id:'f4',class_id:cid,code:'F4',name:'Form 4',url:'https://example.org/f4',due_date:null,message_template:'Olá {nome}, {nome_completo}. URN {matricula}.'};
-  assert.equal(renderMessage(survey.message_template,student,classroom,survey,true),'Olá L-B10001, L-B10001. URN L-B10001.');
-  assert.match(renderMessage(survey.message_template,student,classroom,survey),/Ana Maria Silva/);
+  const classroom={id:cid,code:'T01',name:'Centro',partner:'',starts_on:'',ends_on:'',followup_on:'',shift:'Noite',management_imported:true};
+  const survey={id:'f4',class_id:cid,code:'F4',name:'Form 4',url:'https://example.org/f4',due_date:null,message_template:'Olá {nome}, {nome_completo}. Turma {turma}. URN {matricula}.'};
+  const message=renderMessage(survey.message_template,student,classroom,survey);
+  assert.ok(!message.includes('Ana'),'nome não aparece');
+  assert.ok(!/\{nome/.test(message),'placeholders de nome são removidos');
+  assert.match(message,/Centro · Noite/);
+  assert.match(message,/URN L-B10001/);
 });
 
 function harness(options:{admin?:boolean;authenticated?:boolean;key?:string;providerStatus?:number;invalid?:boolean;reservationError?:string}={}){

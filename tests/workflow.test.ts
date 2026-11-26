@@ -5,9 +5,9 @@ import { parseManagement,parseDate,plusDays,brazilToday } from '../src/managemen
 import { compactURN,matchSubmission,nameScore,normalizeName,prepareForm4,timingFlags } from '../src/matching';
 import { parseAttendancePage,type TextAtom } from '../src/attendance-layout';
 function fixture(){const d=emptyDataset();d.classes=[{id:'c1',code:'T01',name:'Centro',partner:'',starts_on:'2026-08-03',ends_on:'2026-08-07',followup_on:'2026-08-28',management_imported:true},{id:'c2',code:'T02',name:'Centro',partner:'',starts_on:'2026-08-31',ends_on:'2026-09-04',followup_on:'2026-09-25',management_imported:true}];d.students=[{id:'s1',urn:'L-B10001',name:'Alice Maria de Souza Lima',phone:''},{id:'s2',urn:'L-B10022',name:'Alice Maria de Souza Lima',phone:''},{id:'s3',urn:'L-B10003',name:'Clára Helena Rocha Azevedo',phone:''},{id:'s4',urn:'L-B10004',name:'Bárbara Helena Oliveira',phone:''},{id:'s5',urn:'L-B10005',name:'Daniela Fernanda Campos',phone:''}];d.enrollments=d.students.map((s,i)=>({student_id:s.id,class_id:i===1?'c2':'c1',excluded:false,exclusion_reason:'',attendance_verified:true}));return d;}
-test('management CSV ignores empty duplicate headers, guidance, and models; creates dates plus 21 days',()=>{
+test('management CSV ignores empty duplicate headers, guidance, and models; creates dates plus 28 days',()=>{
   const csv='ID,URL Edição,URL Divulgação,ID_Turma,Centro de Treinamento,Turno,Início da Turma,Conclusão da Turma,,,\nMODELO,model,,N/A,,,N/A,N/A,,,\n,Turma 01,Divulgação T01,T01,CENTUR ,Tarde,03/08/2026,07/08/2026,,,\n,Turma 02,,T02,CENTUR,Tarde,31/08/2026,04/09/2026,,,';
-  const result=parseManagement(csv);assert.equal(result.errors.length,0);assert.equal(result.rows.length,2);assert.equal(result.rows[0].followup_on,'2026-08-28');assert.equal(result.rows[1].followup_on,'2026-09-25');assert.equal(result.rows[0].url,'');
+  const result=parseManagement(csv);assert.equal(result.errors.length,0);assert.equal(result.rows.length,2);assert.equal(result.rows[0].followup_on,'2026-09-04');assert.equal(result.rows[1].followup_on,'2026-10-02');assert.equal(result.rows[0].url,'');
   assert.equal(parseDate('31/02/2026'),null);assert.equal(plusDays('2026-12-20',21),'2027-01-10');assert.equal(brazilToday(new Date('2026-10-01T01:00:00Z')),'2026-09-30');
   assert.ok(parseManagement('ID_Turma,Início da Turma,Conclusão da Turma\nT01,04/09/2026,31/08/2026').errors.length);
 });
@@ -24,8 +24,8 @@ test('an exact URN with a different name never automatically marks a student as 
   const match=matchSubmission('L-B10004','Daniela Fernanda Campos','', '2026-08-07T12:00:00Z',fixture());assert.equal(match.state,'review');assert.ok(match.flags.includes('Matrícula e nome divergentes'));assert.equal(match.student_id,null);
 });
 test('timing flags use course dates and Brazil calendar dates without discarding early answers',()=>{
-  const d=fixture();assert.deepEqual(timingFlags('2026-08-28T01:00:00Z','c1',d),['Resposta antes de 3 semanas']);assert.deepEqual(timingFlags('2026-08-28T13:00:00Z','c1',d),[]);
-  const m=matchSubmission('L-B10003','Clára Helena Rocha Azevedo','', '2026-08-07T12:00:00Z',d);assert.equal(m.state,'linked');assert.ok(m.flags.includes('Resposta antes de 3 semanas'));
+  const d=fixture();assert.deepEqual(timingFlags('2026-08-28T01:00:00Z','c1',d),['Resposta antes de 4 semanas']);assert.deepEqual(timingFlags('2026-08-28T13:00:00Z','c1',d),[]);
+  const m=matchSubmission('L-B10003','Clára Helena Rocha Azevedo','', '2026-08-07T12:00:00Z',d);assert.equal(m.state,'linked');assert.ok(m.flags.includes('Resposta antes de 4 semanas'));
 });
 test('real Form 4 header conventions support Brasil/Brazil, duplicates and full answer retention',async()=>{
   const fields={urn:'main_survey/A1_Please_enter_y_stration_Number_URN',name:'main_survey/A2_Please_enter_your_name',country:'main_survey/A3_Country'};

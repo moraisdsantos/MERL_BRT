@@ -33,7 +33,7 @@ test('Form 3 migration: both surveys per class, per-form completion, issues visi
       const rows=(await q<{code:string}>('select s.code from response_status r join surveys s on s.id=r.survey_id')).rows;
       assert.deepEqual(rows.map(r=>r.code),['F3']);
       const attention=(await q<{attention:string[]}>('select attention from response_status')).rows[0].attention;
-      assert.ok(!attention.includes('Resposta antes de 3 semanas'),'o prazo de 3 semanas não vale para o Form 3');
+      assert.ok(!attention.includes('Resposta antes de 4 semanas'),'o prazo de 4 semanas não vale para o Form 3');
       const kind=(await q<{kind:string}>(`select kind from source_imports order by imported_at desc limit 1`)).rows[0].kind;
       assert.equal(kind,'form3');
     });
