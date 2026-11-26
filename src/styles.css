@@ -353,3 +353,12 @@ tr:last-child td{border-bottom:0}
 .pending-panel li:last-child{border-bottom:none;padding-bottom:0}
 .pending-panel li strong{color:var(--ink)}
 .pending-count{margin-left:auto;color:var(--faint)}
+.board-shell{max-width:780px;margin:0 auto;padding:44px 20px 30px;display:flex;flex-direction:column;gap:22px;min-height:100dvh}
+.board-header{display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+.board-header h1{font-size:1.7rem;margin:4px 0 0}
+.board-header .form-switch{margin-top:6px}
+.board-meta{display:flex;gap:18px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.send-cell{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.sent-note{font-size:.72rem;color:var(--faint);white-space:normal}
+.link-actions{display:flex;gap:10px;align-items:center}
+.board-shell footer{margin-top:auto;padding-top:20px;font-size:.75rem;color:var(--faint)}
