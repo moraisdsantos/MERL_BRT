@@ -9,9 +9,10 @@ import { brazilToday } from './management';
 import { reconcileForm4 } from './matching';
 import Dialog from './Dialog';
 type Page='overview'|'classes'|'pending'|'imports'|'review'|'messages'|'access'|'issues'|'metrics';
-type ClassFilter={usina:string;turno:string;nivel:string};
-const emptyFilter:ClassFilter={usina:'todas',turno:'todos',nivel:'todos'};
-const matchFilter=(c:ClassRow,f:ClassFilter)=>(f.usina==='todas'||c.name===f.usina)&&(f.turno==='todos'||c.shift===f.turno)&&(f.nivel==='todos'||classLevel(c)===f.nivel);
+type ClassFilter={usina:string;turno:string;nivel:string;periodo:string};
+const emptyFilter:ClassFilter={usina:'todas',turno:'todos',nivel:'todos',periodo:'todos'};
+const periodKey=(c:ClassRow)=>`${c.starts_on||''}|${c.ends_on||''}`;
+const matchFilter=(c:ClassRow,f:ClassFilter)=>(f.usina==='todas'||c.name===f.usina)&&(f.turno==='todos'||c.shift===f.turno)&&(f.nivel==='todos'||classLevel(c)===f.nivel)&&(f.periodo==='todos'||periodKey(c)===f.periodo);
 const errorText=(e:unknown)=>e instanceof Error?e.message:typeof e==='object'&&e&&'message' in e?String(e.message):'Não foi possível concluir.';
 const date=(value?:string|null)=>value?new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'America/Sao_Paulo'}).format(new Date(value.length===10?value+'T15:00:00Z':value)):'—';
 const initials=(name:string)=>name.split(/\s+/).filter(Boolean).slice(0,2).map(s=>s[0]).join('');
@@ -25,7 +26,10 @@ function Metric({label,value,color='neutral'}:{label:string;value:number|string;
 function ClassFilters({classes,value,onChange,children}:{classes:ClassRow[];value:ClassFilter;onChange:(f:ClassFilter)=>void;children?:ReactNode}){
   const usinas=Array.from(new Set(classes.map(c=>c.name))).sort((a,b)=>a.localeCompare(b,'pt-BR'));
   const turnos=Array.from(new Set(classes.map(c=>c.shift||''))).filter(Boolean).sort();
+  const periodos=Array.from(new Map(classes.filter(c=>c.starts_on).map(c=>[periodKey(c),c])).values()).sort((a,b)=>String(a.starts_on).localeCompare(String(b.starts_on)));
+  const short=(d?:string|null)=>d?d.slice(8,10)+'/'+d.slice(5,7):'—';
   return <div className="class-filters">
+    <select aria-label="Período" value={value.periodo} onChange={e=>onChange({...value,periodo:e.target.value})}><option value="todos">Todos os períodos</option>{periodos.map(c=><option key={periodKey(c)} value={periodKey(c)}>{short(c.starts_on)} a {short(c.ends_on)}</option>)}</select>
     <select aria-label="Usina da Paz" value={value.usina} onChange={e=>onChange({...value,usina:e.target.value})}><option value="todas">Todas as usinas</option>{usinas.map(u=><option key={u} value={u}>{u}</option>)}</select>
     <select aria-label="Turno" value={value.turno} onChange={e=>onChange({...value,turno:e.target.value})}><option value="todos">Todos os turnos</option>{turnos.map(t=><option key={t} value={t}>{t}</option>)}</select>
     <select aria-label="Nível" value={value.nivel} onChange={e=>onChange({...value,nivel:e.target.value})}><option value="todos">Todos os níveis</option><option>Básico</option><option>Intermediário</option></select>
