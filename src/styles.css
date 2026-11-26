@@ -374,4 +374,3 @@ select option{background:#1c1402;color:#ffffff}
 .drive-actions{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
 .field-error{color:#ffb3b3;font-size:.85rem;margin:0}
 .alert.success{border-color:rgba(140,220,160,.5);background:rgba(60,140,80,.18);color:#d9f7e0}
-.build-version{margin-left:auto;font-size:.7rem;color:var(--faint);opacity:.8}
